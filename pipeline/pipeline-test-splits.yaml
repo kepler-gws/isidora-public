@@ -1,0 +1,63 @@
+description:
+    name: pipeline-test-splits
+    description: Try different split strategies and number of output tiles. Gather the best-performing one.
+
+env:
+    variables:
+        # Global options.
+        OUTPUT_PATH: /project2/kmpardo_1034/isidora/pipeline/maestro
+        OVERWRITE: 'true'
+        
+        INPUT_TILE_PATH: /project2/kmpardo_1034/isidora/pipeline/training_set_full_tile.pkl
+        INPUT_TILE_RB_PATH: /project2/kmpardo_1034/isidora/pipeline/full_tile_rb.pkl
+        INPUT_TILE_TRAINING_SET_PATH: /project2/kmpardo_1034/isidora/pipeline/training_set_full_wf.npy
+
+        VALIDATION_TILE_PATH: /project2/kmpardo_1034/isidora/pipeline/validation_set_full_tile.pkl
+        VALIDATION_SET_PATH: /project2/kmpardo_1034/isidora/pipeline/validation_set_full_wf.npy
+
+        # N_FREQ_OVERLAP_ONESIDE: 2
+
+batch:
+    type: slurm
+    bank: kmpardo_1034
+    host: # Ignored by SLURM.
+    # Can't be overriden in individual steps?
+    queue: gpu
+    # Needed for procs to show up in SLURM batch header; we override this per-step.
+    # procs: 1
+
+study:
+    - name: split-tile-compute-rbs
+      description: Split tiles.
+      run:
+        cmd: |
+            #SBATCH --ntasks=1
+            #SBATCH --cpus-per-task=32
+            #SBATCH --mem-per-cpu=4G
+
+            $(LAUNCHER) --exclusive \
+            python3 $(SPECROOT)/split-tile-compute-rbs.py $(INPUT_TILE_PATH) $(INPUT_TILE_RB_PATH) $(WORKSPACE) \
+            --input-tile-training-wf-arr-path $(INPUT_TILE_TRAINING_SET_PATH) \
+            --n-output-tiles $(N_TILES) \
+            --split-strategy $(SPLIT_STRATEGY) \
+            --n_freq_overlap_oneside $(N_FREQ_OVERLAP_ONESIDE)
+        walltime: '6:00:00'
+        procs: 1
+
+    - name: validate-rb-accuracy
+      description: Validate RB accuracy.
+      run:
+        cmd: |
+            #SBATCH --ntasks=1
+            #SBATCH --cpus-per-task=32
+            #SBATCH --mem-per-cpu=4G
+
+            $(LAUNCHER) --exclusive \
+            python3 $(SPECROOT)/validate-rb-accuracy.py $(INPUT_TILE_PATH) $(INPUT_TILE_RB_PATH) $(VALIDATION_TILE_PATH) $(split-tile-compute-rbs.workspace) \
+            --input-tile-training-wf-arr-path $(INPUT_TILE_TRAINING_SET_PATH) \
+            --input-tile-validation-wf-arr-path $(VALIDATION_SET_PATH) \
+            --subtile-result-path $(split-tile-compute-rbs.workspace)/subtile_splits.pkl \
+            --subtile-rb-path $(split-tile-compute-rbs.workspace)/subtile_rb_dict.pkl
+        walltime: '6:00:00'
+        procs: 1
+        depends: [split-tile-compute-rbs]

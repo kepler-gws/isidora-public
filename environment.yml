@@ -1,0 +1,42 @@
+name: isidora
+channels:
+  - conda-forge
+  - nvidia
+  - defaults
+dependencies:
+  - python=3.11
+  - wget
+  - seaborn
+  - nbstripout
+  - ffmpeg
+  - ipykernel
+  - ipywidgets
+  - corner
+  - matplotlib
+  - jax=0.7.2
+  - jaxlib=*=*cuda*
+  - cupy
+  - papermill
+  - pip
+  - numpy
+  - numba
+  - astropy
+  - pandas
+  - jupyter
+  - tqdm
+  - python-dotenv
+  - cuda-nvcc
+  - cuda-cupti
+  - dill
+  - multiprocess
+  - memray
+  - pycbc
+  - python-lal
+  - scikit-learn
+  - emcee
+  - dynesty
+  - pip:
+      - arby==1.0.2
+      - maestrowf==1.1.9
+      - unxt==1.11.1
+      - git+https://gitlab.com/imrphenom-dev/phenomxpy.git@f4a6800710cb3f400057c8a2302af51402d05b23
